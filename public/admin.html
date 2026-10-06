@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agent Admin</title>
+<style>
+  :root { --bg:#f6f4f0; --card:#fff; --ink:#1f1f1f; --muted:#6f675c; --line:#e6dfd3; --accent:#9a7209; --accent-soft:#f5ecd6; --ok:#1d7a46; --bad:#b3261e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:#1f1a12; color:#f3e7c9; padding:12px 20px; display:flex; align-items:center; gap:16px; }
+  header b { font-size:16px; letter-spacing:.3px; }
+  header .sp { flex:1; }
+  header button { background:transparent; color:#f3e7c9; border:1px solid #6b5a35; border-radius:8px; padding:5px 10px; cursor:pointer; }
+  nav { display:flex; gap:4px; padding:10px 20px 0; flex-wrap:wrap; border-bottom:1px solid var(--line); background:#fff; }
+  nav button { border:0; background:transparent; padding:10px 14px; cursor:pointer; font-size:14px; color:var(--muted); border-bottom:2px solid transparent; }
+  nav button.on { color:var(--ink); border-color:var(--accent); font-weight:600; }
+  nav .badge { background:var(--bad); color:#fff; border-radius:9px; padding:0 6px; font-size:11px; margin-left:4px; }
+  main { max-width:1100px; margin:0 auto; padding:20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
+  .card h2 { margin:0 0 4px; font-size:16px; }
+  .card p.help { margin:0 0 12px; color:var(--muted); font-size:13px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .stat .v { font-size:26px; font-weight:700; }
+  .stat .l { color:var(--muted); font-size:12.5px; }
+  label { display:block; font-weight:600; font-size:13px; margin:12px 0 4px; }
+  input[type=text], input[type=password], input[type=number], textarea, select { width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; background:#fff; color:var(--ink); }
+  textarea { min-height:90px; resize:vertical; }
+  button.btn { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600; }
+  button.btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  button.btn.danger { background:#fff; color:var(--bad); border:1px solid #efc9c5; }
+  button.btn:disabled { opacity:.5; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .list > div { border-top:1px solid var(--line); padding:12px 0; }
+  .list > div:first-child { border-top:0; }
+  .q { font-weight:600; }
+  .a { color:#3d372e; white-space:pre-wrap; }
+  .muted { color:var(--muted); font-size:12.5px; }
+  .pill { display:inline-block; border-radius:10px; padding:1px 8px; font-size:12px; background:var(--accent-soft); color:#6b4f05; }
+  .pill.bad { background:#fdecea; color:var(--bad); } .pill.ok { background:#e5f4ea; color:var(--ok); }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:8px 6px; border-top:1px solid var(--line); vertical-align:top; font-size:13.5px; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; border-top:0; }
+  .chat { display:flex; flex-direction:column; gap:8px; max-height:60vh; overflow:auto; padding:4px; }
+  .bubble { max-width:80%; padding:8px 12px; border-radius:12px; white-space:pre-wrap; }
+  .bubble.user { align-self:flex-end; background:var(--accent-soft); }
+  .bubble.assistant { align-self:flex-start; background:#f1efea; }
+  .bubble.error { align-self:flex-start; background:#fdecea; color:var(--bad); font-size:12.5px; }
+  .two { display:grid; grid-template-columns:320px 1fr; gap:16px; }
+  .two .side { max-height:70vh; overflow:auto; }
+  .side .item { padding:10px; border-radius:8px; cursor:pointer; border:1px solid transparent; }
+  .side .item:hover, .side .item.on { background:var(--accent-soft); border-color:#e8d7a8; }
+  .prod { display:flex; gap:10px; align-items:center; }
+  .prod img { width:48px; height:48px; object-fit:cover; border-radius:6px; background:#eee; }
+  code, pre { background:#f3efe7; border-radius:6px; padding:2px 6px; font-size:12.5px; }
+  pre { padding:10px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1f1a12; color:#fff; padding:10px 16px; border-radius:8px; display:none; z-index:9; }
+  #login { max-width:360px; margin:12vh auto; }
+  .hidden { display:none !important; }
+  @media (max-width:760px){ .two { grid-template-columns:1fr; } main { padding:16px; } nav { padding:6px 8px 0; } }
+</style>
+</head>
+<body>
+<div id="login" class="card hidden">
+  <h2>AI Agent Admin</h2>
+  <p class="help">Enter the admin password (ADMIN_PASSWORD in <code>src/config.js</code>).</p>
+  <form id="loginForm"><input type="password" id="pw" placeholder="Password" autocomplete="current-password"><div style="height:10px"></div><button class="btn">Log in</button> <span id="loginErr" class="muted" style="color:var(--bad)"></span></form>
+</div>
+
+<div id="app" class="hidden">
+  <header><b>✦ AI Agent Admin</b><span class="sp"></span><a href="/demo" target="_blank" style="color:#f3e7c9">Open test chat ↗</a><button id="logout">Log out</button></header>
+  <nav id="tabs"></nav>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const inr = (n) => n == null ? '' : '₹' + Math.round(n).toLocaleString('en-IN');
+const when = (d) => d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2500); }
+
+async function api(path, opts = {}) {
+  const res = await fetch('/admin/api' + path, { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  if (res.status === 401) { showLogin(); throw new Error('Please log in.'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function showLogin() { $('#app').classList.add('hidden'); $('#login').classList.remove('hidden'); $('#pw').focus(); }
+$('#loginForm').onsubmit = async (e) => {
+  e.preventDefault();
+  $('#loginErr').textContent = '';
+  const res = await fetch('/admin/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { $('#loginErr').textContent = data.error || 'Login failed'; return; }
+  $('#pw').value = '';
+  start();
+};
+$('#logout').onclick = async () => { await fetch('/admin/api/logout', { method: 'POST' }); showLogin(); };
+
+const TABS = [
+  ['overview', 'Overview'], ['train', 'Train the agent'], ['unanswered', 'Needs answers'], ['conversations', 'Conversations'],
+  ['leads', 'Leads'], ['catalog', 'CRM products'], ['settings', 'Settings'], ['install', 'Add to website'],
+];
+let current = 'overview';
+let overview = {};
+
+async function start() {
+  overview = await api('/overview');
+  $('#login').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+  $('#logout').classList.toggle('hidden', !overview.authEnabled);
+  drawTabs();
+  go(current);
+}
+
+function drawTabs() {
+  const badge = { unanswered: overview.unansweredOpen, leads: overview.leadsNew };
+  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button data-k="${k}" class="${k === current ? 'on' : ''}">${l}${badge[k] ? `<span class="badge">${badge[k]}</span>` : ''}</button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach((b) => b.onclick = () => go(b.dataset.k));
+}
+
+async function go(k) {
+  current = k;
+  drawTabs();
+  $('#view').innerHTML = '<p class="muted">Loading…</p>';
+  try { await VIEWS[k]($('#view')); } catch (err) { $('#view').innerHTML = `<div class="card"><p style="color:var(--bad)">${esc(err.message)}</p></div>`; }
+}
+
+async function refreshOverview() { overview = await api('/overview'); drawTabs(); }
+
+const VIEWS = {
+  async overview(v) {
+    const o = overview = await api('/overview');
+    drawTabs();
+    const c = o.catalog;
+    v.innerHTML = `
+      ${!o.apiKeySet ? `<div class="card" style="border-color:#e8d7a8"><h2>Running in free basic mode</h2><p class="help" style="margin:0">The agent answers using keyword matching on your Q&As, store information and the CRM products — no AI cost. For smarter, conversational AI answers, put your key in <code>ANTHROPIC_API_KEY</code> in <code>src/config.js</code> and restart.</p></div>` : ''}
+      <div class="grid">
+        <div class="stat"><div class="v">${c.total}</div><div class="l">Products synced from CRM</div></div>
+        <div class="stat"><div class="v">${o.conversationsToday}</div><div class="l">Chats in last 24h (${o.conversations} total)</div></div>
+        <div class="stat"><div class="v">${o.leadsNew}</div><div class="l">New leads</div></div>
+        <div class="stat"><div class="v">${o.unansweredOpen}</div><div class="l">Questions needing your answer</div></div>
+        <div class="stat"><div class="v">${o.faqs}</div><div class="l">Trained answers (FAQs)</div></div>
+        <div class="stat"><div class="v">${o.photoSearch?.indexed ?? 0}</div><div class="l">Designs searchable by photo${o.photoSearch?.indexing ? ' (indexing…)' : ''}</div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h2>How to train your agent</h2>
+        <p class="help" style="margin:0">1. <b>Train the agent</b> → fill in store information (address, timings, policies) and add common questions with answers.<br>
+        2. <b>CRM products</b> → paste your public CRM catalogue links; products and live prices sync automatically every ${'hour'}.<br>
+        3. Check <b>Needs answers</b> regularly — questions the agent couldn't answer appear there; answer once and the agent learns it.<br>
+        4. Read <b>Conversations</b> to see what customers ask, and teach better answers from there.</p>
+        <p class="muted" style="margin:10px 0 0">Last CRM sync: ${when(c.syncedAt)}</p></div>`;
+  },
+
+  async train(v) {
+    const [{ settings }, faqs] = await Promise.all([api('/settings'), api('/faqs')]);
+    v.innerHTML = `
+      <div class="card"><h2>Store information</h2>
+        <p class="help">Everything the agent should know about your store: address, Google Maps link, timings, phone, making charges, exchange/buyback policy, hallmarking, payment options, delivery, custom orders… Write it the way you'd brief a new salesperson.</p>
+        <textarea id="storeInfo" style="min-height:200px" placeholder="Address: ...&#10;Timings: 11am–9pm, Tuesday closed&#10;Exchange policy: ...&#10;All gold is BIS hallmarked (HUID)...">${esc(settings.storeInfo)}</textarea>
+        <label>Rules & tone for the agent</label>
+        <p class="help">Optional extra instructions, e.g. "Always invite customers to visit the showroom", "Never offer discounts", "Reply in Hindi if the customer writes in Hindi".</p>
+        <textarea id="instructions">${esc(settings.instructions)}</textarea>
+        <div style="height:10px"></div><button class="btn" id="saveInfo">Save</button></div>
+
+      <div class="card"><h2>Questions & answers (${faqs.length})</h2>
+        <p class="help">Add the questions customers ask you most often. The agent uses these answers — reworded naturally and in the customer's language.</p>
+        <label>Question</label><input type="text" id="fq" placeholder="e.g. Do you buy old gold?">
+        <label>Answer</label><textarea id="fa" placeholder="e.g. Yes, we exchange old gold at today's rate after testing purity in front of you..."></textarea>
+        <div style="height:10px"></div><button class="btn" id="addFaq">Add Q&A</button>
+        <div class="list" id="faqList" style="margin-top:14px"></div></div>`;
+
+    $('#saveInfo').onclick = async () => {
+      await api('/settings', { method: 'PUT', body: { storeInfo: $('#storeInfo').value, instructions: $('#instructions').value } });
+      toast('Saved — the agent uses this from the next message.');
+    };
+    $('#addFaq').onclick = async () => {
+      await api('/faqs', { method: 'POST', body: { question: $('#fq').value, answer: $('#fa').value } });
+      toast('Added'); go('train');
+    };
+    $('#faqList').innerHTML = faqs.length ? faqs.slice().reverse().map((f) => `
+      <div data-id="${f.id}"><div class="q">${esc(f.question)}</div><div class="a">${esc(f.answer)}</div>
+      <div class="row" style="margin-top:6px"><button class="btn ghost edit">Edit</button><button class="btn danger del">Delete</button></div></div>`).join('')
+      : '<p class="muted">No Q&As yet.</p>';
+    $('#faqList').querySelectorAll('[data-id]').forEach((el) => {
+      const f = faqs.find((x) => x.id === el.dataset.id);
+      el.querySelector('.del').onclick = async () => { if (!confirm('Delete this Q&A?')) return; await api('/faqs/' + f.id, { method: 'DELETE' }); go('train'); };
+      el.querySelector('.edit').onclick = () => {
+        el.innerHTML = `<input type="text" value="${esc(f.question)}"><div style="height:6px"></div><textarea>${esc(f.answer)}</textarea>
+          <div class="row" style="margin-top:6px"><button class="btn save">Save</button><button class="btn ghost cancel">Cancel</button></div>`;
+        el.querySelector('.cancel').onclick = () => go('train');
+        el.querySelector('.save').onclick = async () => {
+          await api('/faqs/' + f.id, { method: 'PUT', body: { question: $('input', el).value, answer: $('textarea', el).value } });
+          toast('Saved'); go('train');
+        };
+      };
+    });
+  },
+
+  async unanswered(v) {
+    const list = await api('/unanswered');
+    v.innerHTML = `<div class="card"><h2>Questions the agent couldn't answer</h2>
+      <p class="help">Write the answer once — it is saved as a Q&A and the agent will answer it from now on.</p>
+      <div class="list">${list.length ? list.map((u) => `
+        <div data-id="${u.id}"><div class="q">${esc(u.question)}</div><div class="muted">${when(u.createdAt)}</div>
+        <textarea placeholder="Your answer…" style="margin-top:6px;min-height:70px"></textarea>
+        <div class="row" style="margin-top:6px"><button class="btn teach">Teach this answer</button><button class="btn ghost dismiss">Dismiss</button><button class="btn ghost view">View chat</button></div></div>`).join('')
+        : '<p class="muted">Nothing waiting. 🎉</p>'}</div></div>`;
+    v.querySelectorAll('[data-id]').forEach((el) => {
+      const u = list.find((x) => x.id === el.dataset.id);
+      el.querySelector('.teach').onclick = async () => {
+        await api('/faqs', { method: 'POST', body: { question: u.question, answer: $('textarea', el).value, unansweredId: u.id } });
+        toast('Learned!'); await refreshOverview(); go('unanswered');
+      };
+      el.querySelector('.dismiss').onclick = async () => { await api('/unanswered/' + u.id, { method: 'DELETE' }); await refreshOverview(); go('unanswered'); };
+      el.querySelector('.view').onclick = () => { openConv = u.conversationId; go('conversations'); };
+    });
+  },
+
+  async conversations(v) {
+    const list = await api('/conversations');
+    v.innerHTML = `<div class="two"><div class="card side" id="convList"></div><div class="card" id="convView"><p class="muted">Select a conversation.</p></div></div>`;
+    $('#convList').innerHTML = list.length ? list.map((c) => `<div class="item" data-id="${c.id}"><div>${esc(c.preview) || '<i>(empty)</i>'}</div><div class="muted">${when(c.updatedAt || c.startedAt)} · ${c.turns} msg</div></div>`).join('') : '<p class="muted">No conversations yet.</p>';
+    $('#convList').querySelectorAll('.item').forEach((el) => el.onclick = () => showConv(el.dataset.id));
+    if (openConv) { showConv(openConv); openConv = null; }
+  },
+
+  async leads(v) {
+    const leads = await api('/leads');
+    v.innerHTML = `<div class="card"><h2>Leads captured by the agent</h2><p class="help">Customers who shared their phone number for a callback, visit, booking or custom order.</p>
+      ${leads.length ? `<table><tr><th>Date</th><th>Name</th><th>Phone</th><th>Interested in</th><th>Status</th><th></th></tr>${leads.map((l) => `
+        <tr data-id="${l.id}"><td>${when(l.createdAt)}</td><td>${esc(l.name)}</td><td><a href="tel:${esc(l.phone)}">${esc(l.phone)}</a></td><td>${esc(l.interest)}</td>
+        <td><select>${['new','contacted','converted','closed'].map((s) => `<option ${s === l.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+        <td><button class="btn ghost view">Chat</button></td></tr>`).join('')}</table>` : '<p class="muted">No leads yet.</p>'}</div>`;
+    v.querySelectorAll('tr[data-id]').forEach((tr) => {
+      const l = leads.find((x) => x.id === tr.dataset.id);
+      $('select', tr).onchange = async (e) => { await api('/leads/' + l.id, { method: 'PUT', body: { status: e.target.value } }); toast('Updated'); refreshOverview(); };
+      $('.view', tr).onclick = () => { openConv = l.conversationId; go('conversations'); };
+    });
+  },
+
+  async catalog(v) {
+    const [{ settings, crmBase }, cat] = await Promise.all([api('/settings'), api('/catalog')]);
+    const direct = cat.direct ? `
+      <div class="card"><h2>Connected directly to the CRM</h2>
+        <p class="help">The agent logs in to the CRM (read-only) and reads every design and piece. Only designs with pieces <b>In Stock</b> are shown to customers, priced at today's rate. Syncs automatically every ${esc(settings.syncIntervalHours)} hour(s).</p>
+        ${cat.stats ? `<div class="grid">
+          <div class="stat"><div class="v">${cat.stats.shown}</div><div class="l">In-stock designs the agent shows</div></div>
+          <div class="stat"><div class="v">${cat.stats.designs}</div><div class="l">Designs in CRM</div></div>
+          <div class="stat"><div class="v">${cat.stats.piecesInStock}</div><div class="l">Pieces in stock (of ${cat.stats.pieces})</div></div></div>` : ''}
+        ${cat.error ? `<p style="color:var(--bad)">Last sync failed: ${esc(cat.error)} — still showing the previous product list.</p>` : ''}
+        <div class="row" style="margin-top:12px"><button class="btn" id="syncNow">Sync now</button><span class="muted" id="syncInfo">Last sync: ${when(cat.syncedAt)}</span></div>
+      </div>` : '';
+    v.innerHTML = direct + `
+      <div class="card ${cat.direct ? 'hidden' : ''}"><h2>CRM catalogue links</h2>
+        <p class="help"><b>Better:</b> fill in <code>CRM_EMAIL</code> and <code>CRM_PASSWORD</code> (a read-only CRM login) in <code>src/config.js</code> and restart — the agent then reads your whole inventory directly and you don't need these links.</p>
+        <p class="help">The agent reads products and live prices from your CRM's <b>public</b> catalogue links (CRM → Inventory → Catalogues → Public → Copy link). One link per line.
+        Tip: create one catalogue in the CRM called "All products" with every design, make it public, and paste just that link.</p>
+        <textarea id="links" style="min-height:120px" placeholder="${esc(crmBase)}/c/...">${esc(settings.catalogueLinks.join('\n'))}</textarea>
+        <div class="row" style="margin-top:10px"><button class="btn" id="saveLinks">Save & sync now</button><span class="muted" id="syncInfo">Last sync: ${when(cat.syncedAt)} · ${cat.total} products</span></div>
+        ${cat.catalogues.some((c) => c.error) ? `<p style="color:var(--bad)">Some links failed: ${cat.catalogues.filter((c) => c.error).map((c) => esc(c.title + ' — ' + c.error)).join('; ')}</p>` : ''}
+      </div>
+      <div class="card"><h2>Search synced products</h2><p class="help">This is exactly what the agent sees.</p>
+        <div class="row"><input type="text" id="pq" placeholder="e.g. ladies ring, mangalsutra, D620" style="flex:1"><button class="btn ghost" id="psearch">Search</button></div>
+        <div id="presults" style="margin-top:12px"></div></div>`;
+    const drawResults = (r) => {
+      $('#presults').innerHTML = `<p class="muted">${r.matches} match(es)</p>` + (r.items.length ? `<table><tr><th>Design</th><th>Purity</th><th>Weight</th><th>Price today</th><th>In stock</th><th>Category</th></tr>${r.items.map((p) => `
+        <tr><td><div class="prod">${p.thumb ? `<img src="${esc(p.thumb)}" loading="lazy">` : ''}<div><b>${esc(p.title)}</b><div class="muted">${esc(p.code)}</div></div></div></td>
+        <td>${esc(p.purity)}</td><td>${p.weightG != null ? p.weightG + ' g' : '—'}</td><td>${p.price != null ? inr(p.price) : 'Not shown in CRM'}</td><td>${p.inStock ?? '—'}</td><td class="muted">${esc(p.catalogues.slice(0, 3).join(', '))}</td></tr>`).join('')}</table>` : '');
+    };
+    drawResults(cat);
+    const search = async () => drawResults(await api('/catalog?q=' + encodeURIComponent($('#pq').value)));
+    $('#psearch').onclick = search;
+    $('#pq').onkeydown = (e) => { if (e.key === 'Enter') search(); };
+    if ($('#syncNow')) $('#syncNow').onclick = async (e) => {
+      e.target.disabled = true; $('#syncInfo').textContent = 'Syncing with CRM…';
+      try { const r = await api('/sync', { method: 'POST' }); toast(`Synced ${r.total} in-stock designs`); go('catalog'); }
+      catch (err) { toast(err.message); e.target.disabled = false; $('#syncInfo').textContent = err.message; }
+    };
+    $('#saveLinks').onclick = async (e) => {
+      e.target.disabled = true; $('#syncInfo').textContent = 'Syncing…';
+      try {
+        await api('/settings', { method: 'PUT', body: { catalogueLinks: $('#links').value.split(/\s+/).filter(Boolean) } });
+        const r = await api('/sync', { method: 'POST' });
+        toast(`Synced ${r.total} products`); go('catalog');
+      } catch (err) { toast(err.message); e.target.disabled = false; $('#syncInfo').textContent = err.message; }
+    };
+  },
+
+  async settings(v) {
+    const { settings: s, models } = await api('/settings');
+    v.innerHTML = `<div class="card"><h2>Settings</h2>
+      <label>Business name</label><input type="text" id="businessName" value="${esc(s.businessName)}">
+      <label>Assistant name (shown in chat header)</label><input type="text" id="assistantName" value="${esc(s.assistantName)}">
+      <label>Welcome message</label><textarea id="welcomeMessage">${esc(s.welcomeMessage)}</textarea>
+      <label>WhatsApp number (with country code, e.g. 919876543210)</label><input type="text" id="whatsappPhone" value="${esc(s.whatsappPhone)}">
+      <label>Chat colour</label><input type="color" id="accentColor" value="${esc(s.accentColor)}">
+      <label>AI model</label><select id="model">${Object.entries(models).map(([k, l]) => `<option value="${k}" ${k === s.model ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+      <label>Thinking effort</label><select id="effort">${['low','medium','high'].map((e) => `<option ${e === s.effort ? 'selected' : ''}>${e}</option>`).join('')}</select>
+      <p class="muted">Low is fast and fine for shop chat. Raise it if answers feel careless (slower and costs more).</p>
+      <label>Sync CRM every (hours)</label><input type="number" id="syncIntervalHours" min="0.25" step="0.25" value="${esc(s.syncIntervalHours)}">
+      <label>Allowed websites (optional)</label><input type="text" id="allowedOrigins" value="${esc(s.allowedOrigins)}" placeholder="https://ittanjeweller.com https://www.ittanjeweller.com">
+      <p class="muted">Leave empty to allow the chat on any site. Otherwise list the exact site addresses, separated by spaces.</p>
+      <div style="height:12px"></div><button class="btn" id="save">Save settings</button></div>`;
+    $('#save').onclick = async () => {
+      const body = {};
+      ['businessName','assistantName','welcomeMessage','whatsappPhone','accentColor','model','effort','syncIntervalHours','allowedOrigins'].forEach((k) => body[k] = $('#' + k).value);
+      await api('/settings', { method: 'PUT', body });
+      toast('Settings saved');
+    };
+  },
+
+  async install(v) {
+    const src = location.origin + '/widget.js';
+    v.innerHTML = `<div class="card"><h2>Add the chat to your website</h2>
+      <p class="help">Paste this one line before <code>&lt;/body&gt;</code> on your website (WordPress: Appearance → Theme File Editor → footer.php, or any "Insert Headers and Footers" plugin → Footer).</p>
+      <pre>&lt;script src="${esc(src)}" defer&gt;&lt;/script&gt;</pre>
+      <p class="help">The address above must be the public address where this agent server is hosted (e.g. <code>https://agent.ittanjeweller.com</code>), not localhost.</p>
+      <p><a href="/demo" target="_blank">Open the test page ↗</a> to try the chat as a customer.</p></div>`;
+  },
+};
+
+let openConv = null;
+async function showConv(cid) {
+  document.querySelectorAll('#convList .item').forEach((el) => el.classList.toggle('on', el.dataset.id === cid));
+  const c = await api('/conversations/' + cid);
+  const box = $('#convView');
+  box.innerHTML = `<div class="muted" style="margin-bottom:8px">Started ${when(c.startedAt)}${c.pageUrl ? ' · on ' + esc(c.pageUrl) : ''}</div><div class="chat">${c.messages.map((m, i) => `
+    <div class="bubble ${m.role}">${m.image ? `<a href="/admin/api/uploads/${esc(m.image)}" target="_blank"><img src="/admin/api/uploads/${esc(m.image)}" alt="Customer photo" style="display:block;max-width:220px;max-height:220px;border-radius:8px;margin-bottom:4px"></a>` : ''}${esc(m.text)}${m.products?.length ? `<div class="muted">Showed: ${esc(m.products.join(', '))}</div>` : ''}
+    ${m.role === 'assistant' ? `<div><a href="#" class="teach" data-i="${i}" style="font-size:12px">Teach a better answer</a></div>` : ''}</div>`).join('')}</div>`;
+  box.querySelectorAll('.teach').forEach((a) => a.onclick = (e) => {
+    e.preventDefault();
+    const i = +a.dataset.i;
+    const prevUser = [...c.messages.slice(0, i)].reverse().find((m) => m.role === 'user');
+    const form = document.createElement('div');
+    form.innerHTML = `<label>Customer question</label><input type="text" value="${esc(prevUser?.text || '')}"><label>Correct answer</label><textarea>${esc(c.messages[i].text)}</textarea>
+      <div class="row" style="margin-top:6px"><button class="btn">Save as Q&A</button></div>`;
+    a.replaceWith(form);
+    $('button', form).onclick = async () => { await api('/faqs', { method: 'POST', body: { question: $('input', form).value, answer: $('textarea', form).value } }); toast('Learned!'); form.remove(); };
+  });
+}
+
+start().catch(() => {});
+</script>
+</body>
+</html>
