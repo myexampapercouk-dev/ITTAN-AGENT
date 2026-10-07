@@ -2,10 +2,10 @@
   "name": "ittan-ai-agent",
   "version": "1.0.0",
   "description": "AI shopping assistant trained from an admin panel, synced with the ITTAN CRM",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js"
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
